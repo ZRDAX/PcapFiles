@@ -1,26 +1,43 @@
-import re
+import pyshark
 
-# Funções para extrair informações específicas usando RegEx
-def extract_ips(text):
-    ip_pattern = re.compile(r'(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)')
-    return ip_pattern.findall(text)
+def extract_ips(packet):
+    ip_addresses = []
+    if 'IP' in packet:
+        if 'src' in packet.ip.field_names:
+            ip_addresses.append(packet.ip.src)
+        if 'dst' in packet.ip.field_names:
+            ip_addresses.append(packet.ip.dst)
+    return ip_addresses
 
-def extract_macs(text):
-    mac_pattern = re.compile(r'([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})')
-    return mac_pattern.findall(text)
+def extract_macs(packet):
+    mac_addresses = []
+    if 'eth' in packet:
+        if 'src' in packet.eth.field_names:
+            mac_addresses.append(packet.eth.src)
+        if 'dst' in packet.eth.field_names:
+            mac_addresses.append(packet.eth.dst)
+    return mac_addresses
 
-def extract_hostnames(text):
-    hostname_pattern = re.compile(r'([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})')
-    return hostname_pattern.findall(text)
+def extract_hostnames(packet):
+    hostnames = []
+    if 'DNS' in packet:
+        if 'qry_name' in packet.dns.field_names:
+            hostnames.append(packet.dns.qry_name)
+        if 'resp_name' in packet.dns.field_names:
+            hostnames.append(packet.dns.resp_name)
+    return hostnames
 
-# Leitura do arquivo de captura
-with open('captura.txt', 'r') as file:
-    data = file.read()
+# Ler o arquivo de captura pcap
+cap = pyshark.FileCapture('captura.pcap')
 
-# Extração de informações
-ips = extract_ips(data)
-macs = extract_macs(data)
-hostnames = extract_hostnames(data)
+ips = set()
+macs = set()
+hostnames = set()
+
+for packet in cap:
+    ips.update(extract_ips(packet))
+    macs.update(extract_macs(packet))
+    hostnames.update(extract_hostnames(packet))
 
 # Exibição das informações extraídas
 print("Endereços IP:")
