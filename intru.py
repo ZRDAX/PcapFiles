@@ -1,15 +1,14 @@
 import logging
 import time
-from scapy.all import sniff, IP, Ether, TCP, UDP, ICMP, DNS, DNSQR
+from scapy.all import sniff, IP, Ether, TCP, ICMP, DNS, DNSQR
 from threading import Thread
 
 # Configurar o logging
-logging.basicConfig(filename='intruderLogs.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='LogsGET.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
-packet_log = []  # Lista para armazenar os logs temporários
+packet_log = []
 
 def is_intrusion(packet):
-    # Adicione suas regras de detecção de intrusão aqui
     # Exemplo: detectar escaneamento de portas
     if packet.haslayer(TCP) and packet[TCP].flags == "S":
         return True, "Port scan detected"
@@ -47,16 +46,17 @@ def packet_handler(packet):
         log_entry.append(f"Intrusion: {intrusion_type}")
 
     if log_entry:
-        logging.info(", ".join(log_entry))
-        packet_log.append(", ".join(log_entry))
+        log_entry_str = ", ".join(log_entry)
+        logging.info(log_entry_str)
+        packet_log.append(log_entry_str)
 
 def print_logs_periodically():
     while True:
         if packet_log:
             for entry in packet_log:
                 print(entry)
-            packet_log.clear()  # Limpar a lista após imprimir
-        time.sleep(5)
+            packet_log.clear()
+        time.sleep(2)
 
 # Iniciar a captura de pacotes em um thread separado
 sniff_thread = Thread(target=lambda: sniff(prn=packet_handler, store=0, iface='eth0', promisc=True))
